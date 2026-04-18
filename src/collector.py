@@ -1,8 +1,10 @@
 import time
 import psutil
+import csv
+from datetime import datetime
 from pynvml import *
 
-# Initialize GPU access
+# Initialize GPU
 nvmlInit()
 handle = nvmlDeviceGetHandleByIndex(0)
 
@@ -11,14 +13,25 @@ def get_metrics():
     gpu = nvmlDeviceGetUtilizationRates(handle).gpu
     return cpu, gpu
 
-if __name__ == "__main__":
-    print("Starting system monitor... (Press Ctrl+C to stop)\n")
+# Create output file
+filename = f"data/log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+with open(filename, "w", newline="") as f:
+    writer = csv.writer(f)
+    writer.writerow(["timestamp", "cpu", "gpu"])
+
+    print(f"Logging started... Saving to {filename}")
+    print("Press Ctrl+C to stop\n")
 
     try:
         while True:
             cpu, gpu = get_metrics()
-            print(f"CPU: {cpu}% | GPU: {gpu}%")
+            timestamp = datetime.now().strftime("%H:%M:%S")
+
+            writer.writerow([timestamp, cpu, gpu])
+            print(f"{timestamp} | CPU: {cpu}% | GPU: {gpu}%")
+
             time.sleep(1)
 
     except KeyboardInterrupt:
-        print("\nStopped monitoring.")
+        print("\nLogging stopped.")
