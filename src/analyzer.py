@@ -50,6 +50,7 @@ plt.title("CPU vs GPU Usage During Gameplay")
 plt.legend()
 plt.xticks(rotation=45)
 plt.tight_layout()
+plt.axhline(y=90, linestyle='--', label='CPU Threshold (90%)')
 
 # Save graph
 plt.savefig("outputs/performance_plot.png")
