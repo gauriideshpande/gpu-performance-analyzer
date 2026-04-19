@@ -1,21 +1,45 @@
 # GPU Performance Analyzer
 
-A simple tool to monitor CPU and GPU usage during real-time workloads like gaming.
+A lightweight tool to monitor and analyze CPU and GPU usage during real-world workloads like gaming.
+
+## Motivation
+While playing games, I noticed performance inconsistencies and wanted to understand how system resources behave under load.
+
+This project explores CPU vs GPU utilization and identifies performance bottlenecks using real gameplay data.
 
 ## Features
-- Tracks CPU usage
-- Tracks GPU usage (NVIDIA)
-- Real-time monitoring
+- Real-time CPU and GPU monitoring
+- Logging performance data to CSV
+- Visualization of CPU vs GPU usage
+- Automatic bottleneck detection
+- Spike analysis
 
-## Why I built this
-While gaming, I noticed system performance varies a lot depending on workload.  
-This project is an attempt to understand CPU vs GPU behavior under real-world conditions.
+## Key Findings
+Using gameplay data from Fortnite:
 
-## Tech Used
+- CPU bottlenecks detected: 33 instances
+- GPU bottlenecks detected: 0
+- CPU usage frequently spiked to 100%
+- GPU usage remained between 20–50%
+
+### Insight
+Even in GPU-intensive workloads, CPU can become the limiting factor, leading to underutilized GPU capacity.
+
+## Tech Stack
 - Python
 - psutil
 - pynvml
+- pandas
+- matplotlib
 
-## Current Status
-Basic monitoring working.  
-Next step: logging and performance analysis.
+## Future Improvements
+- Per-core CPU analysis
+- FPS integration
+- Real-time dashboard
+- Multi-game comparison
+
+## How to Run
+```bash
+pip install -r requirements.txt
+python src/collector.py
+python src/analyzer.py
