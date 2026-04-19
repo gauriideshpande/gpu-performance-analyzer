@@ -1,7 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# ====== UPDATE FILE PATH ======
 file_path = "data/log_20260418_203250.csv"
 
 # Load data
@@ -75,7 +74,6 @@ plt.legend()
 plt.xticks(rotation=45)
 plt.tight_layout()
 
-# Save graph
 plt.savefig("outputs/performance_with_detection.png")
 
 plt.show()
