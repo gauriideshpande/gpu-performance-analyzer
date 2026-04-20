@@ -1,79 +1,68 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import ast
 
-file_path = "data/log_20260418_203250.csv"
+file_path = "data/FinalLogs.csv"
 
-# Load data
 df = pd.read_csv(file_path)
 df['timestamp'] = pd.to_datetime(df['timestamp'], format="%H:%M:%S")
 
-# ====== BASIC STATS ======
-avg_cpu = df['cpu'].mean()
+# Fix column names
+cpu_col = 'cpu_total' if 'cpu_total' in df.columns else 'cpu'
+
+# Handle missing fps_estimate
+if 'fps_estimate' not in df.columns:
+    print("fps_estimate column not found. Skipping FPS analysis.")
+    df['fps_estimate'] = 60
+
+# Safe parsing cpu_cores
+def safe_parse(x):
+    try:
+        return ast.literal_eval(x)
+    except:
+        return [0]
+
+df['cpu_cores'] = df['cpu_cores'].apply(safe_parse)
+df['max_core'] = df['cpu_cores'].apply(max)
+
+# Stats
+avg_cpu = df[cpu_col].mean()
 avg_gpu = df['gpu'].mean()
 
-max_cpu = df['cpu'].max()
+max_cpu = df[cpu_col].max()
 max_gpu = df['gpu'].max()
 
 print("----- Performance Summary -----")
 print(f"Average CPU Usage: {avg_cpu:.2f}%")
 print(f"Average GPU Usage: {avg_gpu:.2f}%")
-print(f"Max CPU Usage: {max_cpu}%")
-print(f"Max GPU Usage: {max_gpu}%")
 
-# ====== BOTTLENECK DETECTION ======
-cpu_bottleneck = df[(df['cpu'] > 90) & (df['gpu'] < 50)]
-gpu_bottleneck = df[(df['gpu'] > 90) & (df['cpu'] < 70)]
+# Bottlenecks
+cpu_bottleneck = df[(df[cpu_col] > 90) & (df['gpu'] < 50)]
+gpu_bottleneck = df[(df['gpu'] > 90) & (df[cpu_col] < 70)]
 
 print("\n----- Bottleneck Detection -----")
 print(f"CPU Bottleneck moments: {len(cpu_bottleneck)}")
 print(f"GPU Bottleneck moments: {len(gpu_bottleneck)}")
 
-total_points = len(df)
+# Single-core
+single_core_bottleneck = df[df['max_core'] > 90]
+print(f"\nSingle-core bottleneck moments: {len(single_core_bottleneck)}")
 
-cpu_ratio = (len(cpu_bottleneck) / total_points) * 100
-gpu_ratio = (len(gpu_bottleneck) / total_points) * 100
+# FPS
+fps_drops = df[df['fps_estimate'] < 50]
+print(f"FPS drop moments: {len(fps_drops)}")
 
-print(f"\nCPU Bottleneck %: {cpu_ratio:.2f}%")
-print(f"GPU Bottleneck %: {gpu_ratio:.2f}%")
+correlated = df[(df['max_core'] > 90) & (df['fps_estimate'] < 50)]
+print(f"CPU spike + FPS drop correlation: {len(correlated)}")
 
-# ====== IDLE DETECTION ======
-idle = df[(df['cpu'] < 20) & (df['gpu'] < 20)]
-print(f"Idle moments: {len(idle)}")
-
-# ====== INTERPRETATION ======
-if len(cpu_bottleneck) > len(gpu_bottleneck):
-    print("\nInference: System is primarily CPU-bound.")
-elif len(gpu_bottleneck) > len(cpu_bottleneck):
-    print("\nInference: System is primarily GPU-bound.")
-else:
-    print("\nInference: Mixed workload.")
-
-# ====== PLOTTING ======
+# Plot
 plt.figure()
-
-# Main lines
-plt.plot(df['timestamp'], df['cpu'], label="CPU Usage")
+plt.plot(df['timestamp'], df[cpu_col], label="CPU Usage")
 plt.plot(df['timestamp'], df['gpu'], label="GPU Usage")
 
-# Highlight CPU bottlenecks
-plt.scatter(cpu_bottleneck['timestamp'], cpu_bottleneck['cpu'],
-            label="CPU Bottleneck", marker='o')
-
-# Highlight GPU bottlenecks
-plt.scatter(gpu_bottleneck['timestamp'], gpu_bottleneck['gpu'],
-            label="GPU Bottleneck", marker='x')
-
-# Threshold line
-plt.axhline(y=90, linestyle='--', label='CPU Threshold (90%)')
-
-plt.xlabel("Time")
-plt.ylabel("Usage (%)")
-plt.title("CPU vs GPU Usage with Bottleneck Detection")
+plt.scatter(cpu_bottleneck['timestamp'], cpu_bottleneck[cpu_col], label="CPU Bottleneck")
+plt.axhline(y=90, linestyle='--', label='CPU Threshold')
 
 plt.legend()
-plt.xticks(rotation=45)
 plt.tight_layout()
-
-plt.savefig("outputs/performance_with_detection.png")
-
 plt.show()
